@@ -1,0 +1,103 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.5/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="contract.js"></script>
+
+    <script>
+      $(async function() {
+        var land;
+        var sale;
+
+        function ethEnabled() {
+          if (window.web3) {
+            window.web3 = new Web3(window.web3.currentProvider);
+            window.ethereum.enable();
+            return true;
+          }
+          return false;
+        }
+
+        if (ethEnabled()) {
+          web3 = new Web3(web3.currentProvider);
+          land = new web3.eth.Contract(landAbi, landAddress);
+          sale = new web3.eth.Contract(saleAbi, saleAddress);
+
+          var accounts = await web3.eth.getAccounts();
+          var allowance = await sale.methods.allowance(accounts[0]).call();
+          $("#allowanceCount").html(allowance.count);
+          $("#allowancePrice").html(`${web3.utils.fromWei(allowance.price)}` + " Ξ");
+          var owned = await land.methods.balanceOf(accounts[0]).call();
+          $("#ownedCount").html(owned);
+        } else {
+          console.log('No web3? You should consider trying MetaMask!');
+          web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+        }
+
+        $("#purchaseLand").submit(async function (event) {
+          event.preventDefault();
+          
+          var accounts = await web3.eth.getAccounts();
+          var allowance = await sale.methods.allowance(accounts[0]).call();
+          // console.log(allowance);
+          var count = $("#purchaseCount").val();
+          // console.log(count);
+          // console.log(parseInt(allowance.count));
+          var amount = Math.min(count, parseInt(allowance.count));
+          // console.log(amount);
+          var num = web3.utils.toBN(allowance.price).mul(web3.utils.toBN(amount));
+          console.log(web3.utils.fromWei(num));
+
+          console.log(await web3.eth.estimateGas({from: accounts[0], to: saleAddress, value: num}))
+
+          web3.eth.sendTransaction({
+            from: accounts[0],
+            to: saleAddress,
+            value: num,
+          });
+        });
+
+        $("#refundLand").submit(async function (event) {
+          event.preventDefault();
+          
+          var accounts = await web3.eth.getAccounts();
+          var owned = await land.methods.balanceOf(accounts[0]).call();
+          console.log(owned);
+          sale.methods.refund().send({ from: accounts[0] });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <span style="font-weight: bold;">Test Purchase</span>
+    <br/><br/>
+    <form id="purchaseLand">
+      Limit: 
+      <span id="allowanceCount">-</span>
+      <br/><br/>
+      Price: 
+      <span id="allowancePrice">-</span>
+      <br/><br/>
+      Count: 
+      <select id="purchaseCount">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+      </select>
+      <br/><br/>
+      <input type="submit" value="Purchase">
+    </form>
+    <br /><br />
+    <span style="font-weight: bold;">Test Refund</span>
+    <br/><br/>
+    <form id="refundLand">
+      Owned: 
+      <span id="ownedCount">-</span>
+      <br/><br/>
+      <input type="submit" value="Refund">
+    </form>
+    <br /><br />
+  </body>
+</html>

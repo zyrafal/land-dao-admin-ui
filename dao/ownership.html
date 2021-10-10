@@ -1,0 +1,214 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.5/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/async@3.2.1/dist/async.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.2/axios.min.js"></script>
+    <script src="../lib/bower_components/abi-decoder/dist/abi-decoder.js"></script>
+    <script src="contract.js"></script>
+
+    <style type="text/css">
+      table, th, td {
+        border: 1px solid black;
+        padding: 7px 7px 7px 7px;
+        text-align: center;
+      }
+    </style>
+
+    <script>
+      $(async function() {
+        var land;
+        var sale;
+
+        function ethEnabled() {
+          if (window.web3) {
+            window.web3 = new Web3(window.web3.currentProvider);
+            window.ethereum.enable();
+            return true;
+          }
+          return false;
+        }
+
+        if (ethEnabled()) {
+          web3 = new Web3(web3.currentProvider);
+          land = new web3.eth.Contract(landAbi, landAddress);
+          sale = new web3.eth.Contract(saleAbi, saleAddress);
+        } else {
+          console.log('No web3? You should consider trying MetaMask!');
+          web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+        }
+
+        async function reload() {
+          $("#loading").show();
+          $("#refreshButton").hide();
+
+          abiDecoder.addABI(saleAbi);
+
+          // Fetch txs list and filter only the allowance methods
+          var addr = '0x9c9dc2110240391d4bee41203bdfbd19c279b429';
+          var { data: { result } } = await axios.get(`https://api.etherscan.io/api?module=account&action=txlist&address=${addr}&startblock=13161660&endblock=99999999&sort=asc&apikey=UVS859S1SICPTG49UAAS1GYZQJ7984XEGW`);
+          // console.log(result);
+          // var txs = [];
+          var tmpAddresses = [];
+          $.each(result, function (_, val) {
+            if (val.to.toLowerCase() == saleAddress.toLowerCase()) {
+              var decoded = abiDecoder.decodeMethod(val.input);
+              if (decoded && decoded.name == 'batchSetAllowances') {
+                var address = decoded.params[0].value;
+                tmpAddresses.push(...address);
+                // var counts = decoded.params[1].value;
+                // var prices = decoded.params[2].value;
+                // $.each(addresses, function (idx) {
+                //   txs.push({
+                //     address: addresses[idx],
+                //     count: counts[idx],
+                //     price: prices[idx],
+                //   })
+                // });
+              }
+            }
+          });
+          console.log(tmpAddresses);
+
+          if (sale && land) {
+            var totalMinted = await land.methods.totalSupply().call();
+            var maxSupply = await land.methods.maximumSupply().call();
+            var list = [];
+            var uniqueAddresses = [];
+            uniqueAddresses.push(...tmpAddresses);
+
+            await async.eachOf(
+              new Array(parseInt(totalMinted)),
+              async function (_, idx) {
+                // console.log(idx);
+                var tokenIndex = await land.methods.tokenByIndex(idx).call();
+                var address = await land.methods.ownerOf(tokenIndex).call();
+
+                if (!uniqueAddresses.includes(address)) {
+                  uniqueAddresses.push(address);
+                }
+              }
+            );
+
+            uniqueAddresses = uniqueAddresses.map(addr => addr.toLowerCase());
+            uniqueAddresses = [...new Set(uniqueAddresses)];
+            let pendingMinting = 0;
+            let uniqueCount = 0;
+
+            await async.eachOf(
+              uniqueAddresses,
+              async function (address) {
+                var owned = parseInt(await land.methods.balanceOf(address).call());
+                var allowance = await sale.methods.allowance(address).call();
+                var count = parseInt(allowance.count);
+                var price = web3.utils.fromWei(allowance.price) + " Ξ";
+
+                if (owned > 0 || count > 0) {
+                  pendingMinting += count;
+
+                  if (owned > 0) {
+                    uniqueCount++;
+                  }
+
+                  list.push({
+                  address,
+                  owned,
+                  count,
+                  price,
+                });
+                }
+              }
+            );
+
+            list.sort((a, b) => (a.owned < b.owned) ? 1 : -1);
+            // console.log(list);
+
+            var activityDiv = document.getElementById("ownerList");
+            $("#ownerList").empty();
+
+            $("#totalMinted").html(`Total Minted: ${totalMinted} / ${maxSupply}`);
+            $("#pendingMinting").html(`Pending Minting: ${pendingMinting}`);
+            $("#uniqueOwnerCount").html(`Unique Owners: ${uniqueCount}`);
+
+            var table = document.createElement("table");
+            table.className = "list";
+            activityDiv.append(table);
+
+            var rowHeader = document.createElement("tr");
+            rowHeader.className = "list-row";
+            table.append(rowHeader);
+
+            var valueHeader1 = document.createElement("th");
+            valueHeader1.innerHTML = 'Address';
+            rowHeader.append(valueHeader1);
+
+            var valueHeader2 = document.createElement("th");
+            valueHeader2.innerHTML = 'Total Owned';
+            rowHeader.append(valueHeader2);
+
+            var valueHeader3 = document.createElement("th");
+            valueHeader3.innerHTML = 'Current Allocation';
+            rowHeader.append(valueHeader3);
+
+            var valueHeader4 = document.createElement("th");
+            valueHeader4.innerHTML = 'Current Price';
+            rowHeader.append(valueHeader4);
+
+            $.each(list, function (_, val) {
+              var row = document.createElement("tr");
+              row.className = "list-row";
+              table.append(row);
+
+              var address = document.createElement("td");
+              address.innerHTML = val.address;
+              row.append(address);
+
+              var owned = document.createElement("td");
+              owned.innerHTML = val.owned;
+              row.append(owned);
+
+              var count = document.createElement("td");
+              count.innerHTML = val.count;
+              row.append(count);
+
+              var price = document.createElement("td");
+              price.innerHTML = val.price;
+              row.append(price);
+            });
+          } else {
+            alert('Sale and/or land contract not set');
+          }
+
+          $("#loading").hide();
+          $("#refreshButton").show();
+        }
+
+        $("#refreshList").submit(async function (event) {
+          event.preventDefault();
+
+          reload();
+        });
+
+        reload();
+      });
+    </script>
+  </head>
+  <body>
+    <form id="refreshList">
+      <span style="font-weight: bold;">Land Owners + Pending Mintings</span>
+      <br/><br/>
+      <span id="totalMinted"></span>
+      <br/>
+      <span id="uniqueOwnerCount"></span>
+      <br/>
+      <span id="pendingMinting"></span>
+      <br/><br/>
+      <div id="ownerList">
+      </div>
+      <br/>
+      <span id="loading">Loading...</span>
+      <input id="refreshButton" type="submit" value="Refresh">
+    </form>
+    <br /><br /><br />
+  </body>
+</html>

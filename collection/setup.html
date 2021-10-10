@@ -1,0 +1,135 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.5/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="contract.js"></script>
+
+    <script>
+      $(async function() {
+        function ethEnabled() {
+          if (typeof window.ethereum !== 'undefined') {
+            window.ethereum.request({ method: 'eth_requestAccounts' });
+          } else {
+            alert('Install MetaMask and try again');
+          }
+        }
+
+        if (window.ethereum) {
+          window.ethereum.on('accountsChanged', function (accounts) {
+            window.location.reload();
+          });
+
+          console.log('Metamask enabled');
+          web3 = new Web3(window.ethereum);
+          let accounts = await web3.eth.getAccounts();
+
+          const groupId = 1002;
+
+          const minter = new web3.eth.Contract(minterAbi, minterAddress);
+          const collection = new web3.eth.Contract(collectionAbi, collectionAddress);
+          const yield = new web3.eth.Contract(yieldAbi, yieldAddress);
+
+          const openSale = await minter.methods.openForPublic().call();
+          const yieldRatio = parseInt(await yield.methods.landYieldRatio(minterAddress).call());
+          let maxSupply;
+          let minterEnabled = false;
+
+          try {
+            maxSupply = await collection.methods.maximumSupply(groupId).call();
+            console.log(maxSupply);
+            minterEnabled = true;
+          } catch (error) {
+            console.log(error);
+          }
+
+          if (!minterEnabled) {
+            $('#currentMinterState').html("False");
+            $("#enableMinter").val('Enable Minter');
+
+            $("#minterStateForm").submit(async function (event) {
+              event.preventDefault();
+
+              accounts = await web3.eth.getAccounts();
+              await collection.methods.createGroup(
+                groupId,
+                'Cartel',
+                1000,
+                minterAddress,
+                'https://landdao.mypinata.cloud/ipfs/QmW2Z2hMwWna4debbMpUtPMGhHZ7XYSLhKgPLmgFpVtA3S/',
+              ).send({ from: accounts[0] });
+            });
+          } else {
+            $('#currentMinterState').html("True");
+            $("#enableMinter").hide();
+          }
+
+          if (!openSale) {
+            $('#currentSalesState').html("False");
+            $("#enableSales").val('Enable Sales');
+          } else {
+            $('#currentSalesState').html("True");
+            $("#enableSales").val('Disable Sales');
+          }
+
+          $("#salesStateForm").submit(async function (event) {
+            event.preventDefault();
+
+            accounts = await web3.eth.getAccounts();
+            minter.methods.toggleOpenForPublic(!openSale).send({ from: accounts[0] });
+          });
+
+          if (yieldRatio > 0) {
+            $('#currentYieldState').html("True");
+            $("#enableYield").hide();
+          } else {
+            $('#currentYieldState').html("False");
+            $("#enableYield").show();
+
+            $("#yieldStateForm").submit(async function (event) {
+              event.preventDefault();
+
+              accounts = await web3.eth.getAccounts();
+              const ratio = 90;
+              yield.methods.setLandYieldRatio(minterAddress, ratio).send({ from: accounts[0] });
+            });
+          }
+        }
+
+        // $("#updateSaleForm").submit(async function (event) {
+        //   event.preventDefault();
+
+        //   if (land) {
+        //     var accounts = await web3.eth.getAccounts();
+        //     land.methods.setLogicContract(saleAddress).send({ from: accounts[0] });
+        //   } else {
+        //     alert('Land contract not set');
+        //   }
+        // });
+      });
+    </script>
+  </head>
+  <body>
+    <span style="font-weight: bold;">Collection Contracts Setup</span>
+    <br/><br/>
+    <form id="minterStateForm">
+      Cartel Minter Enabled:
+      <label id="currentMinterState">False</label>
+      <br/><br/>
+      <input id="enableMinter" type="submit" value="Enable Minter">
+    </form>
+    <br />
+    <form id="salesStateForm">
+      Cartel Public Sales Enabled:
+      <label id="currentSalesState">False</label>
+      <br/><br/>
+      <input id="enableSales" type="submit" value="Enable Sales">
+    </form>
+    <br />
+    <form id="yieldStateForm">
+      Cartel Yield Enabled:
+      <label id="currentYieldState">False</label>
+      <br/><br/>
+      <input id="enableYield" type="submit" value="Enable Yield">
+    </form>
+  </body>
+</html>

@@ -1,0 +1,179 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.5/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
+    <script src="contract.js"></script>
+
+    <script>
+      $(async function() {
+        var land;
+        var sale;
+
+        function ethEnabled() {
+          if (window.web3) {
+            window.web3 = new Web3(window.web3.currentProvider);
+            window.ethereum.enable();
+            return true;
+          }
+          return false;
+        }
+
+        if (ethEnabled()) {
+          web3 = new Web3(web3.currentProvider);
+          land = new web3.eth.Contract(landAbi, landAddress);
+          sale = new web3.eth.Contract(saleAbi, saleAddress);
+
+          var currentFundAddress1 = await sale.methods.fundsAddresses(1).call();
+          var currentFundAddress2 = await sale.methods.fundsAddresses(2).call();
+          var currentFundAddress3 = await sale.methods.fundsAddresses(3).call();
+          var currentFundAddress4 = await sale.methods.fundsAddresses(4).call();
+
+          $("#currentFundAddress1").html(currentFundAddress1);
+          $("#currentFundAddress2").html(currentFundAddress2);
+          $("#currentFundAddress3").html(currentFundAddress3);
+          $("#currentFundAddress4").html(currentFundAddress4);
+
+          var lockedFunds = await sale.methods.lockedFunds().call();
+          var unlockedFunds = await sale.methods.unlockedFunds().call();
+          var reserveFunds = await sale.methods.reserveFunds().call();
+          var unlockTimestamp = await sale.methods.fundsUnlockTimestamp().call();
+          $("#lockedFunds").html(web3.utils.fromWei(lockedFunds));
+          $("#unlockedFunds").html(web3.utils.fromWei(unlockedFunds));
+          $("#reserveFunds").html(web3.utils.fromWei(reserveFunds));
+
+          if (unlockTimestamp == "0") {
+            $("#unlockTimestamp").html("Now");
+          } else {
+            $("#unlockTimestamp").html(moment(parseInt(unlockTimestamp) * 1000).format('MMMM DD, YYYY [at] HH:mma Z'));
+          }
+        } else {
+          console.log('No web3? You should consider trying MetaMask!');
+          web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+        }
+
+        async function updateFundAddress(index, id) {
+          if (sale) {
+            var accounts = await web3.eth.getAccounts();
+            var address = $(id).val().trim();
+            sale.methods.setFundsAddress(index, address).send({ from: accounts[0] });
+          } else {
+            alert('Sale contract not set');
+          }
+        }
+
+        $("#updateFundAddress1").submit(async function (event) {
+          event.preventDefault();
+          updateFundAddress(1, "#fundAddressInput1");
+        });
+
+        $("#updateFundAddress2").submit(async function (event) {
+          event.preventDefault();
+          updateFundAddress(2, "#fundAddressInput2");
+        });
+
+        $("#updateFundAddress3").submit(async function (event) {
+          event.preventDefault();
+          updateFundAddress(3, "#fundAddressInput3");
+        });
+
+        $("#updateFundAddress4").submit(async function (event) {
+          event.preventDefault();
+          updateFundAddress(4, "#fundAddressInput4");
+        });
+
+        $("#updateUnlockTimestamp").submit(async function (event) {
+          event.preventDefault();
+          
+          if (sale) {
+            var accounts = await web3.eth.getAccounts();
+            var timestamp = $("#unlockTimestampInput").val().trim();
+            sale.methods.setFundsUnlockTimestamp(timestamp).send({ from: accounts[0] });
+          } else {
+            alert('Sale contract not set');
+          }
+        });
+
+        $("#setTimestamp1").click(function () {
+          $("#unlockTimestampInput").val(moment().add("30", "days").unix());
+        });
+
+        $("#setTimestamp2").click(function () {
+          $("#unlockTimestampInput").val(moment().add("45", "days").unix());
+        });
+
+        $("#setTimestamp3").click(function () {
+          $("#unlockTimestampInput").val(moment().add("60", "days").unix());
+        });
+
+        $("#withdrawFunds").submit(async function (event) {
+          event.preventDefault();
+
+          var accounts = await web3.eth.getAccounts();
+          sale.methods.withdraw().send({ from: accounts[0] });
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <span style="font-weight: bold;">Funds Management</span>
+    <br/><br/>
+    <form id="updateFundAddress1">
+      Current Fund Address (KP): 
+      <label id="currentFundAddress1">Not Set</label>
+      <br/><br/>
+      <input id="fundAddressInput1" type="text" value="" style="width: 300px;" />
+      <input type="submit" value="Update Fund Address (KP)">
+    </form>
+    <br /><br />
+    <form id="updateFundAddress2">
+      Current Fund Address (SEIJI): 
+      <label id="currentFundAddress2">Not Set</label>
+      <br/><br/>
+      <input id="fundAddressInput2" type="text" value="" style="width: 300px;" />
+      <input type="submit" value="Update Fund Address (SEIJI)">
+    </form>
+    <br /><br />
+    <form id="updateFundAddress3">
+      Current Fund Address (KUOLUMBUS): 
+      <label id="currentFundAddress3">Not Set</label>
+      <br/><br/>
+      <input id="fundAddressInput3" type="text" value="" style="width: 300px;" />
+      <input type="submit" value="Update Fund Address (KUOLUMBUS)">
+    </form>
+    <br /><br />
+    <form id="updateFundAddress4">
+      Current Fund Address (HAIKI): 
+      <label id="currentFundAddress4">Not Set</label>
+      <br/><br/>
+      <input id="fundAddressInput4" type="text" value="" style="width: 300px;" />
+      <input type="submit" value="Update Fund Address (HAIKI)">
+    </form>
+    <br /><br />
+    <form id="updateUnlockTimestamp">
+      Funds Unlock At: 
+      <label id="unlockTimestamp">-</label>
+      <br/><br/>
+      <input id="unlockTimestampInput" type="text" value=""/>
+      <input type="submit" value="Update Unlock Timestamp">
+    </form>
+    <button id="setTimestamp1">30 Days</button>
+    <button id="setTimestamp2">45 Days</button>
+    <button id="setTimestamp3">60 Days</button>
+    <br /><br /><br />
+    <span style="font-weight: bold;">Owed Funds</span>
+    <br/><br/>
+    <form id="withdrawFunds">
+      Total Locked Funds: 
+      <label id="lockedFunds">-</label>
+      <br/><br/>
+      Total Unlocked Funds: 
+      <label id="unlockedFunds">-</label>
+      <br/><br/>
+      Total Reserved Funds: 
+      <label id="reserveFunds">-</label>
+      <br/><br/>
+      <input type="submit" value="Withdraw">
+    </form>
+  </body>
+</html>

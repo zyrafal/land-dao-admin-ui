@@ -1,0 +1,77 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.5/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="contract.js"></script>
+
+    <script>
+      $(async function() {
+        var land;
+        var sale;
+
+        function ethEnabled() {
+          if (window.web3) {
+            window.web3 = new Web3(window.web3.currentProvider);
+            window.ethereum.enable();
+            return true;
+          }
+          return false;
+        }
+
+        if (ethEnabled()) {
+          web3 = new Web3(web3.currentProvider);
+          land = new web3.eth.Contract(landAbi, landAddress);
+          sale = new web3.eth.Contract(saleAbi, saleAddress);
+
+          var currentSaleAddress = await land.methods.logicContractAddress().call();
+          $("#currentSaleAddress").html(currentSaleAddress);
+
+          var currentLandAddress = await sale.methods.tokenContract().call();
+          $("#currentLandAddress").html(currentLandAddress);
+        } else {
+          console.log('No web3? You should consider trying MetaMask!');
+          web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+        }
+
+        $("#updateSaleForm").submit(async function (event) {
+          event.preventDefault();
+
+          if (land) {
+            var accounts = await web3.eth.getAccounts();
+            land.methods.setLogicContract(saleAddress).send({ from: accounts[0] });
+          } else {
+            alert('Land contract not set');
+          }
+        });
+
+        $("#updateLandForm").submit(async function (event) {
+          event.preventDefault();
+
+          if (land) {
+            var accounts = await web3.eth.getAccounts();
+            sale.methods.setTokenContract(landAddress).send({ from: accounts[0] });
+          } else {
+            alert('Land contract not set');
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <span style="font-weight: bold;">Contracts Setup</span>
+    <br/><br/>
+    <form id="updateSaleForm">
+      Current Sale Address in Land: 
+      <label id="currentSaleAddress">Not Set</label>
+      <br/><br/>
+      <input type="submit" value="Link Sale to Land">
+    </form>
+    <br />
+    <form id="updateLandForm">
+      Current Land Address in Sale: 
+      <label id="currentLandAddress">Not Set</label>
+      <br/><br/>
+      <input type="submit" value="Link Land to Sale">
+    </form>
+  </body>
+</html>

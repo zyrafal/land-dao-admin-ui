@@ -1,0 +1,48 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+
+    <script>
+      $(function() {
+        function ethEnabled() {
+          if (window.web3) {
+            window.web3 = new Web3(window.web3.currentProvider);
+            window.ethereum.enable();
+            return true;
+          }
+          return false;
+        }
+
+        if (window.web3) {
+          $("#panel").css("display", "block");
+          $("#intro").css("display", "none");
+        }
+
+        $("#enableMetamask").click(function () {
+          if (ethEnabled()) {
+            console.log('Metamask enabled');
+            $("#panel").css("display", "block");
+            $("#intro").css("display", "none");
+          } else {
+            console.log('No web3? You should consider trying MetaMask!');
+          }
+        })
+      });
+    </script>
+  </head>
+  <body>
+    <div id="panel" style="display: none">
+      <a href="setup.html">Setup</a><br/><br/>
+      <a href="funds.html">Funds</a><br/><br/>
+      <a href="whitelist.html">Whitelist</a><br/><br/>
+      <a href="ownership.html">Ownership</a><br/><br/>
+      <a href="sale.html">Sale</a><br/><br/>
+    </div>
+    <div id="intro">
+      Please enable Metamask
+      <br /><br />
+      <button id="enableMetamask">Enable</button>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,157 @@
+<html>
+  <head>
+    <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.5/dist/web3.min.js"></script>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+    <script src="contract.js"></script>
+
+    <script>
+      $(async function() {
+        var land;
+        var sale;
+        var rowCount = 10;
+
+        function ethEnabled() {
+          if (window.web3) {
+            window.web3 = new Web3(window.web3.currentProvider);
+            window.ethereum.enable();
+            return true;
+          }
+          return false;
+        }
+
+        if (ethEnabled()) {
+          web3 = new Web3(web3.currentProvider);
+          land = new web3.eth.Contract(landAbi, landAddress);
+          sale = new web3.eth.Contract(saleAbi, saleAddress);
+        } else {
+          console.log('No web3? You should consider trying MetaMask!');
+          web3 = new Web3(new Web3.providers.HttpProvider('http://localhost:8545'));
+        }
+
+        $("#fetchAllowance").submit(async function (event) {
+          event.preventDefault();
+
+          if (sale) {
+            var address = $("#allowanceAddress").val();
+            var allowance = await sale.methods.allowance(address).call();
+
+            $("#allowanceCount").html(allowance.count);
+            $("#allowancePrice").html(web3.utils.fromWei(allowance.price) + " Ξ");
+
+            var owned = await land.methods.balanceOf(address).call();
+            $("#ownedCount").html(owned);
+          } else {
+            alert('Sale contract not set');
+          }
+        });
+
+        $("#updateAllowance").submit(async function (event) {
+          event.preventDefault();
+
+          if (sale) {
+            var accounts = await web3.eth.getAccounts();
+            var addresses = [];
+            var counts = [];
+            var prices = [];
+
+            for (var i = 0; i < rowCount; i++) {
+              var address = $("#allowanceAddress" + (i + 1)).val().trim();
+              var count = parseInt($("#allowanceCount" + (i + 1)).val());
+              var price = parseInt($("#allowancePrice" + (i + 1)).val());
+              if (address && address.length > 0 && count > 0) {
+                addresses.push(address);
+                counts.push(count);
+                prices.push(web3.utils.toWei(`${price}`));
+              }
+            }
+
+            sale.methods.batchSetAllowances(addresses, counts, prices).send({ from: accounts[0] });
+          } else {
+            alert('Sale contract not set');
+          }
+        });
+
+        var activityDiv = document.getElementById("allowanceList");
+        $.each(new Array(rowCount), function (index) {
+          var addressLabel = document.createElement("span");
+          addressLabel.innerHTML = "Address: ";
+          activityDiv.append(addressLabel);
+
+          var addressInput = document.createElement("input");
+          addressInput.id = "allowanceAddress" + (index + 1);
+          addressInput.type = "text";
+          addressInput.style.width = "300px";
+          activityDiv.append(addressInput);
+
+          var emptySpan1 = document.createElement("span");
+          emptySpan1.innerHTML = "&nbsp;&nbsp;&nbsp;";
+          activityDiv.append(emptySpan1);
+
+          var countLabel = document.createElement("span");
+          countLabel.innerHTML = "Count: ";
+          activityDiv.append(countLabel);
+
+          var countSelect = document.createElement("select");
+          countSelect.id = "allowanceCount" + (index + 1);
+          activityDiv.append(countSelect);
+
+          for (var i = 1; i <= 13; i++) {
+            var option = document.createElement("option");
+            option.value = i;
+            option.text = i;
+            countSelect.appendChild(option);
+          }
+
+          var emptySpan2 = document.createElement("span");
+          emptySpan2.innerHTML = "&nbsp;&nbsp;&nbsp;";
+          activityDiv.append(emptySpan2);
+
+          var priceLabel = document.createElement("span");
+          priceLabel.innerHTML = "Price: ";
+          activityDiv.append(priceLabel);
+
+          var priceSelect = document.createElement("select");
+          priceSelect.id = "allowancePrice" + (index + 1);
+          activityDiv.append(priceSelect);
+
+          for (var i = 0; i <= 2; i++) {
+            var option = document.createElement("option");
+            option.value = i;
+            option.text = i + " Ξ";
+            priceSelect.appendChild(option);
+          }
+          
+          var lineBreak1 = document.createElement("br");
+          activityDiv.append(lineBreak1);
+
+          var lineBreak2 = document.createElement("br");
+          activityDiv.append(lineBreak2);
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <form id="updateAllowance">
+      <span style="font-weight: bold;">Manage Allowances</span>
+      <br/><br/>
+      <div id="allowanceList">
+      </div>
+      <br/>
+      <input type="submit" value="Update Allowances">
+    </form>
+    <br /><br /><br />
+    <form id="fetchAllowance">
+      <span style="font-weight: bold;">View Allowance</span>
+      <br/><br/>
+      Address: <input id="allowanceAddress" type="text" style="width: 300;" />
+      <br/><br/>
+      Allocation Left: <span id="allowanceCount">-</span>
+      <br/><br/>
+      Price: <span id="allowancePrice">-</span>
+      <br/><br/>
+      Owned: <span id="ownedCount">-</span>
+      <br/><br/>
+      <input type="submit" value="Get Allowances">
+    </form>
+  </body>
+</html>
