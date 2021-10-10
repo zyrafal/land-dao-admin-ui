@@ -34,10 +34,9 @@
 
           try {
             maxSupply = await collection.methods.maximumSupply(groupId).call();
-            console.log(maxSupply);
             minterEnabled = true;
           } catch (error) {
-            console.log(error);
+            console.log('Minter is not enabled');
           }
 
           if (!minterEnabled) {
@@ -57,7 +56,7 @@
                   'https://landdao.mypinata.cloud/ipfs/QmW2Z2hMwWna4debbMpUtPMGhHZ7XYSLhKgPLmgFpVtA3S/',
                 ).send({ from: accounts[0] });
               } catch (error) {
-                console.log(error);
+                console.log('Failed to create group');
               }
             });
           } else {
