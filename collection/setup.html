@@ -27,10 +27,8 @@
 
           const minter = new web3.eth.Contract(minterAbi, minterAddress);
           const collection = new web3.eth.Contract(collectionAbi, collectionAddress);
-          const yield = new web3.eth.Contract(yieldAbi, yieldAddress);
 
           const openSale = await minter.methods.openForPublic().call();
-          const yieldRatio = parseInt(await yield.methods.landYieldRatio(minterAddress).call());
           let maxSupply;
           let minterEnabled = false;
 
@@ -81,22 +79,6 @@
             accounts = await web3.eth.getAccounts();
             minter.methods.toggleOpenForPublic(!openSale).send({ from: accounts[0] });
           });
-
-          if (yieldRatio > 0) {
-            $('#currentYieldState').html("True");
-            $("#enableYield").hide();
-          } else {
-            $('#currentYieldState').html("False");
-            $("#enableYield").show();
-
-            $("#yieldStateForm").submit(async function (event) {
-              event.preventDefault();
-
-              accounts = await web3.eth.getAccounts();
-              const ratio = 90;
-              yield.methods.setLandYieldRatio(minterAddress, ratio).send({ from: accounts[0] });
-            });
-          }
         }
 
         // $("#updateSaleForm").submit(async function (event) {
@@ -129,11 +111,5 @@
       <input id="enableSales" type="submit" value="Enable Sales">
     </form>
     <br />
-    <form id="yieldStateForm">
-      Cartel Yield Enabled:
-      <label id="currentYieldState">False</label>
-      <br/><br/>
-      <input id="enableYield" type="submit" value="Enable Yield">
-    </form>
   </body>
 </html>
