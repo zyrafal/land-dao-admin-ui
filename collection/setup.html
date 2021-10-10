@@ -49,14 +49,18 @@
             $("#minterStateForm").submit(async function (event) {
               event.preventDefault();
 
-              accounts = await web3.eth.getAccounts();
-              await collection.methods.createGroup(
-                groupId,
-                'Cartel',
-                1000,
-                minterAddress,
-                'https://landdao.mypinata.cloud/ipfs/QmW2Z2hMwWna4debbMpUtPMGhHZ7XYSLhKgPLmgFpVtA3S/',
-              ).send({ from: accounts[0] });
+              try {
+                accounts = await web3.eth.getAccounts();
+                await collection.methods.createGroup(
+                  groupId,
+                  'Cartel',
+                  1000,
+                  minterAddress,
+                  'https://landdao.mypinata.cloud/ipfs/QmW2Z2hMwWna4debbMpUtPMGhHZ7XYSLhKgPLmgFpVtA3S/',
+                ).send({ from: accounts[0] });
+              } catch (error) {
+                console.log(error);
+              }
             });
           } else {
             $('#currentMinterState').html("True");
