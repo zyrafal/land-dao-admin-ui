@@ -1,12 +1,12 @@
 const minterAddress = "0xF56E2C9Bec11cc556a833FD153CF15aB2d97Fd5e";
 const collectionAddress = "0x0da46b2b1e4B4D15ca2026478AE2A3E56fEc5023";
-const yieldAddress = "0xea160B55A5Cee5355c7a5179b38a6DEaa12577C3";
-const oreAddress = "0x63E22F53Ef4eBEc74981e424b46ce9C1E58F8434";
-const cartelOreClaimAddress = "0x4eD0c689CFC906F664Ec5487011987b582b93eA6";
-const mintPassAddress = "0xA28cfDd23fE00aB3D075A75770496E1EA80fBb1c";
-const mintPassMinterAddress = "0xA80E3A3649a1c2eC92793449e17cD04b8D3239B2";
-const collectorPoolAddress = "0x3FFD0C1B90eBe1AD4188860ea9CEC9DF39766d86";
-const fooMinterAddress = "0x3A46601eB55BD6176EEAD0f0F231901aD6393983";
+const yieldAddress = "0x39dfba33b4388aa786232a4fd39f8f86fcd74067";
+const oreAddress = "0xc40107e23c285d9cc9759f7c656805d6e5c88a3c";
+const cartelOreClaimAddress = "0x7b475d5a0bcd613b8fd7e3cc3332875a0c479dbe";
+const mintPassAddress = "0xf8854f6011278dcb3b1abbf41bdf80a8c427c656";
+const mintPassMinterAddress = "0x5c18c3c85365a7ec1d9aa4e8cc4457587010aae2";
+const collectorPoolAddress = "0x1d0f144d92e007a88c7fbb889e8646626be94efd";
+const fooMinterAddress = "0xcd9d76480044aba4be7331a2d34e5c6bdb03d594";
 
 const collectionAbi = [
   {
