@@ -33,61 +33,6 @@
             console.log('Minter is not enabled');
           }
 
-          const tokenIds = await cartelOreClaim.methods.unclaimedTokenIds('0x9c843b498321567072f57A890E6cA81c0cB6C2c2').call();
-          console.log(tokenIds);
-          const orePerToken = 100;
-          const orePerSet = 300;
-          const setCounter = [0, 0, 0, 0, 0, 0, 0];
-          let tokenCount = 0;
-          let totalSetClaim = 0;
-          let totalTokenClaim = 0;
-          tokenIds.forEach((tokenId) => {
-            tokenCount++;
-            let memberType;
-            let groupId = Math.floor(tokenId / 100000);
-            let memberId = tokenId % 100000;
-            let num;
-
-            if (groupId == 1000) {
-              num = memberId - 1;
-            } else if (groupId == 1002) {
-              num = memberId + 1255;
-            }
-
-            if (num % 9 == 0) {
-              memberType = num % 5;
-            } else if (num % 10 == 0) {
-              memberType = num % 6;
-            } else {
-              memberType = num % 7;
-            }
-            setCounter[memberType]++;
-          });
-
-          let totalOre = 0;
-          if (tokenCount > 0) {
-            totalTokenClaim += tokenCount;
-            totalOre += tokenCount * orePerToken;
-          }
-
-          let setCount = tokenCount;
-          for (let i = 0; i < 7; i++) {
-            if (setCount > setCounter[i]) {
-              setCount = setCounter[i];
-            }
-          }
-
-          if (setCount > 0) {
-            totalSetClaim += setCount;
-            totalOre += setCount * orePerSet;
-          }
-
-          console.log(totalOre);
-
-          const oreAmount = await ore.methods.balanceOf(accounts[0]).call();
-          console.log(oreAmount);
-          // await cartelOreClaim.methods.claim(tokenIds).send({ from: accounts[0] });
-
           if (!cartelOreClaimEnabled) {
             $('#currentCartelClaimState').html("False");
             $("#enableCartelClaim").val('Enable Cartel Ore Claim');
