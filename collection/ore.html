@@ -25,6 +25,7 @@
 
           const ore = new web3.eth.Contract(oreAbi, oreAddress);
           const cartelOreClaim = new web3.eth.Contract(cartelOreClaimAbi, cartelOreClaimAddress);
+          const mintPassMinter = new web3.eth.Contract(mintPassMinterAbi, mintPassMinterAddress);
 
           let cartelOreClaimEnabled = false;
           try {
@@ -51,18 +52,50 @@
             $('#currentCartelClaimState').html("True");
             $("#enableCartelClaim").hide();
           }
+
+          let passMinterRegistered = false;
+          try {
+            passMinterRegistered = await ore.methods.burners(mintPassMinterAddress).call();
+          } catch (error) {
+            console.log('Pass Minter is not registered');
+          }
+
+          if (!passMinterRegistered) {
+            $('#currentPassMinterState').html("False");
+            $("#enablePassMinter").val('Register Pass Minter As Burner');
+
+            $("#passMinterStateForm").submit(async function (event) {
+              event.preventDefault();
+
+              try {
+                accounts = await web3.eth.getAccounts();
+                await ore.methods.setBurner(mintPassMinterAddress, true).send({ from: accounts[0] });
+              } catch (error) {
+                console.log('Failed to set burner');
+              }
+            });
+          } else {
+            $('#currentPassMinterState').html("True");
+            $("#enablePassMinter").hide();
+          }
         }
       });
     </script>
   </head>
   <body>
-    <span style="font-weight: bold;">Collection Contracts Setup</span>
+    <span style="font-weight: bold;">ORE Setup</span>
     <br/><br/>
     <form id="cartelOreClaimStateForm">
       Cartel Ore Claimer Enabled:
       <label id="currentCartelClaimState">False</label>
       <br/><br/>
       <input id="enableCartelClaim" type="submit" value="Enable Cartel Ore Claim">
+    </form>
+    <form id="passMinterStateForm">
+      Pass Minter Registered As Burner:
+      <label id="currentPassMinterState">False</label>
+      <br/><br/>
+      <input id="enablePassMinter" type="submit" value="Register Pass Minter As Burner">
     </form>
     <br />
   </body>
