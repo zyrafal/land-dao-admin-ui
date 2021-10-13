@@ -6,22 +6,18 @@
 
     <script>
       $(async function() {
-        function ethEnabled() {
-          if (typeof window.ethereum !== 'undefined') {
-            window.ethereum.request({ method: 'eth_requestAccounts' });
-          } else {
-            alert('Install MetaMask and try again');
-          }
-        }
-
         if (window.ethereum) {
-          window.ethereum.on('accountsChanged', function (accounts) {
-            window.location.reload();
-          });
-
           console.log('Metamask enabled');
           web3 = new Web3(window.ethereum);
           let accounts = await web3.eth.getAccounts();
+
+          if (!accounts || accounts.length === 0) {
+            window.ethereum.request({ method: 'eth_requestAccounts' });
+          }
+
+          window.ethereum.on('accountsChanged', function (accounts) {
+            window.location.reload();
+          });
 
           const ore = new web3.eth.Contract(oreAbi, oreAddress);
           const cartelOreClaim = new web3.eth.Contract(cartelOreClaimAbi, cartelOreClaimAddress);
