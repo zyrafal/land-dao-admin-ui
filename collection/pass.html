@@ -125,6 +125,17 @@
             var lineBreak5 = document.createElement("br");
             passDiv.append(lineBreak5);
           });
+
+          $('#mintPassForMarketing').click(async function (event) {
+            try {
+              const passId = parseInt($("#passSelect").val());
+              const amount = parseInt($("#amountSelect").val());
+              accounts = await web3.eth.getAccounts();
+              await mintPassMinter.methods.generatePassForMarketing(passId, amount).send({ from: accounts[0] });
+            } catch (error) {
+              console.log(error);
+            }
+          });
         }
       });
     </script>
@@ -136,9 +147,41 @@
       Pass Shop Enabled For Minting Pass:
       <label id="currentMinterState">False</label>
       <br/><br/>
-      <input id="enableMinter" type="submit" value="Enable Pass Shop">
+      <input id="enableMinter" type="submit" value="Enable Pass Shop" />
     </form>
+    <hr/>
+    <br/>
     <div id="passList">
+    </div>
+    <hr/>
+    <br/>
+    <div>
+      Mint For Marketing <br/><br/>
+      Pass Discount &nbsp;
+      <select id="passSelect">
+        <option value="1">0%</option>
+        <option value="2">20%</option>
+        <option value="3">25%</option>
+        <option value="4">30#</option>
+        <option value="5">35%</option>
+        <option value="6">100%</option>
+      </select>
+      <br/><br/>
+      Amount &nbsp;
+      <select id="amountSelect">
+        <option value="1">1</option>
+        <option value="2">2</option>
+        <option value="3">3</option>
+        <option value="4">4</option>
+        <option value="5">5</option>
+        <option value="6">6</option>
+        <option value="7">7</option>
+        <option value="8">8</option>
+        <option value="9">9</option>
+        <option value="10">10</option>
+      </select>
+      <br/><br/>
+      <button id="mintPassForMarketing">Mint</button>
     </div>
     <br />
   </body>
