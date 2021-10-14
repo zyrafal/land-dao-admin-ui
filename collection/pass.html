@@ -3,6 +3,7 @@
     <script src="https://cdn.jsdelivr.net/gh/ethereum/web3.js@1.3.5/dist/web3.min.js"></script>
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/async@3.2.1/dist/async.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.29.1/moment.min.js"></script>
     <script src="contract.js"></script>
     <script src="shop.js"></script>
 
@@ -24,6 +25,7 @@
           const mintPass = new web3.eth.Contract(mintPassAbi, mintPassAddress);
           const mintPassMinter = new web3.eth.Contract(mintPassMinterAbi, mintPassMinterAddress);
 
+          // Handles pass minter initialization
           let passMinterEnabled = false;
           try {
             passMinterEnabled = await mintPass.methods.minters(mintPassMinterAddress).call();
@@ -33,7 +35,6 @@
 
           if (!passMinterEnabled) {
             $('#currentMinterState').html("False");
-            $('#enableMinter').val('Enable Pass Shop');
 
             $('#minterStateForm').submit(async function (event) {
               event.preventDefault();
@@ -51,6 +52,7 @@
             $('#enableMinter').hide();
           }
 
+          // Handles passes registrations and pricings
           const passStates = new Array(6).fill(false);
           const passPrices = new Array(6).fill(0);
           await async.eachOf(
@@ -136,6 +138,58 @@
               console.log(error);
             }
           });
+
+          // Handles Free Pass ID for landowners
+          const freePassId = 6;
+          let freePassSet = 0;
+          try {
+            freePassSet = await mintPass.methods.minters(mintPassMinterAddress).call();
+          } catch (error) {
+            console.log('Minter is not enabled');
+          }
+
+          if (freePassSet !== freePassId) {
+            $('#currentFreePassState').html("Not Set");
+            $('#setFreePass').html(`Set Free Pass ID to ${freePassId}`);
+
+            $('#setFreePass').click(async function (event) {
+              event.preventDefault();
+
+              try {
+                accounts = await web3.eth.getAccounts();
+                await mintPassMinter.methods.setFreePassId(freePassId).send({ from: accounts[0] });
+              } catch (error) {
+                console.log(error);
+              }
+            });
+          } else {
+            $('#currentFreePassState').html(freePassId);
+            $('#setFreePass').hide();
+          }
+
+          // Handles Free pass claiming for landowners
+          const claimTimestamp = await mintPassMinter.methods.lastClaimTimestamp().call();
+          if (claimTimestamp == "0") {
+            $("#claimTimestamp").html("Not Set");
+          } else {
+            $("#claimTimestamp").html(moment(parseInt(claimTimestamp) * 1000).format('MMMM DD, YYYY [at] HH:mma Z'));
+          }
+
+          $("#setClaimTimestamp").click(async function (event) {
+            event.preventDefault();
+
+            try {
+              const accounts = await web3.eth.getAccounts();
+              const timestamp = $("#claimTimestampInput").val().trim();
+              await mintPassMinter.methods.setLastClaimTimestamp(timestamp).send({ from: accounts[0] });
+            } catch (error) {
+              console.log(error);
+            }
+          });
+
+          $("#setClaimTimestamp1Day").click(function () {
+            $("#claimTimestampInput").val(moment().add("1", "days").unix());
+          });
         }
       });
     </script>
@@ -153,6 +207,27 @@
     <br/>
     <div id="passList">
     </div>
+    <hr/>
+    <br/>
+    <div>
+      Free Pass ID For Landowners: 
+      <label id="currentFreePassState">Not Set</label>
+      <br/><br/>
+      <button id="setFreePass">Set Free Pass ID</button>
+    </div>
+    <br/>
+    <hr/>
+    <br/>
+    <div>
+      Current Free Pass Deadline:
+      <label id="claimTimestamp">-</label>
+      <br/><br/>
+      <input id="claimTimestampInput" type="text" value=""/>
+      <button id="setClaimTimestamp">Set Free Pass Deadline</button>
+      <br/><br/>
+      <button id="setClaimTimestamp1Day">24 Hours</button>
+    </div>
+    <br/>
     <hr/>
     <br/>
     <div>
