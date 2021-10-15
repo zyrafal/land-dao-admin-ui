@@ -4,7 +4,7 @@ const yieldAddress = "0x39dfba33b4388aa786232a4fd39f8f86fcd74067";
 const oreAddress = "0xc40107e23c285d9cc9759f7c656805d6e5c88a3c";
 const cartelOreClaimAddress = "0x7b475d5a0bcd613b8fd7e3cc3332875a0c479dbe";
 const mintPassAddress = "0xf8854f6011278dcb3b1abbf41bdf80a8c427c656";
-const mintPassMinterAddress = "0x5c18c3c85365a7ec1d9aa4e8cc4457587010aae2";
+const mintPassMinterAddress = "0x4A8f163d412F08975A76d691Fad57c717F3fB07C";
 const collectorPoolAddress = "0x1d0f144d92e007a88c7fbb889e8646626be94efd";
 
 const collectionAbi = [
